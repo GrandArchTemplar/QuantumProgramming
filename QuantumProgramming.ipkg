@@ -1,0 +1,16 @@
+package QuantumProgramming
+
+version    = 0.0.1
+brief      = "Initial project template from idringen"
+
+author     = GrandArchTemplar <GrandArchTemplar@gmail.com>
+license    = MIT
+homepage   = https://github.com/githubuser/QuantumProgramming
+sourceloc  = git@github.com:githubuser/QuantumProgramming.git
+bugtracker = https://github.com/githubuser/QuantumProgramming/issues
+
+sourcedir  = src
+modules    = Test
+tests      = Test.spec
+executable = QuantumProgramming
+main       = Main
