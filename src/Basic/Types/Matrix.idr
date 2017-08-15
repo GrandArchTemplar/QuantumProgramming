@@ -55,4 +55,6 @@ mt * mt1 = fromVecVec(helper (asRaws mt) (asCols mt1)) where
   helper (x :: (z :: xs)) y = map (x <#>) y :: helper (z :: xs) y
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
-
+implementation Functor (Matrix n m) where
+  map f [] = []
+  map f (Raws xs mt) = Raws (map f xs) (map f mt)
