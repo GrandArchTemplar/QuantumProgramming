@@ -38,6 +38,12 @@ implementation (Num a, Neg a, Show a, Eq a, Ord a)
 qMap : (f : Complex a -> Complex b) -> QuantumState a -> QuantumState b
 qMap f (QS amplitude label) = QS (f amplitude) label
 
+implementation Eq a => Eq (QuantumState a) where
+  (QS amplitude1 label1) == (QS amplitude2 label2) = 
+    (amplitude1 == amplitude2) && (label1 == label2)
+implementation [vectorization] Ord a =>  Ord (QuantumState a) where
+  compare (QS amplitude1 label1) (QS amplitude2 label2) = compare label1 label2
+
 qPredicate : (p : Complex a -> Bool) -> QuantumState a -> Bool
 qPredicate p (QS amplitude label) = p amplitude
 
@@ -71,4 +77,7 @@ toLabelVect (QB states) = (_ ** map label states)
 fromVect : Vect n (Complex a) -> Vect n String -> QBit a
 fromVect xs ys = QB (zipWith QS xs ys)
 
-toVect : QBit a -> (n ** Vect n (Complex a))
+refine : Ord a => QBit a -> List $ QuantumState a
+refine (QB states) = sort @{vectorization} ?sstates
+
+toFineVect : QBit a -> (n ** Vect n (Complex a))
