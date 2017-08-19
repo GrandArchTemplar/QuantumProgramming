@@ -3,6 +3,8 @@ module Basic.Types.QBit
 import Data.Complex
 import Data.Vect
 
+import Utilll.Accomodation
+
 %default total
 %access public export
 
@@ -52,7 +54,7 @@ conjugateQS = qMap conjugate
 
 record QBit a where
   constructor QB
-  states : Vect n (QuantumState a)
+  states : List (QuantumState a)
 %name QBit qb, qb1, qb2, qb3
 partial
 implementation (Num a, Neg a, Show a, Eq a, Ord a) 
@@ -62,22 +64,38 @@ implementation (Num a, Neg a, Show a, Eq a, Ord a)
   show (QB (x :: qb@(y :: xs))) = show x ++ " + " 
     ++ show (QB qb)
 
-t : QuantumState Int
-t = QS (1 :+ 0) "0"
+toAmplList : QBit a -> List (Complex a)
+toAmplList (QB states) = map amplitude states
 
-t2 : QBit Int
-t2 = QB [t, t]
+toLabelList : QBit a -> List String
+toLabelList (QB states) = map label states
 
-toVect : QBit a -> (n ** Vect n (Complex a))
-toVect (QB states) = (_ ** map amplitude states)
+fromList : List (Complex a) -> List String -> QBit a
+fromList xs ys = QB (zipWith QS xs ys)
 
-toLabelVect : QBit a -> (n ** Vect n String)
-toLabelVect (QB states) = (_ ** map label states)
+refine : Ord a => QBit a -> List (QuantumState a)
+refine (QB states) = sort @{vectorization} states
 
-fromVect : Vect n (Complex a) -> Vect n String -> QBit a
-fromVect xs ys = QB (zipWith QS xs ys)
+toFineList : Ord a => QBit a -> List (Complex a)
+toFineList (QB states) = map amplitude (sort @{vectorization} states)
 
-refine : Ord a => QBit a -> List $ QuantumState a
-refine (QB states) = sort @{vectorization} ?sstates
+fromFineList : List (Complex a) -> QBit a 
+fromFineList xs = QB (zipWith QS xs (accomod "01" (degree (length xs) 2)))
 
-toFineVect : QBit a -> (n ** Vect n (Complex a))
+liftQBit : (f : List (QuantumState a) -> List (QuantumState b)) -> QBit a -> QBit b
+liftQBit f (QB states) = QB (f states)
+
+infix 2 <~>
+(<~>) : Neg a => QuantumState a -> QuantumState a -> QuantumState a
+(QS amplitude1 label1) <~> (QS amplitude2 label2) = QS (amplitude1 * amplitude2) (label1 ++ label2)
+
+entangle : Neg a => QBit a -> QBit a -> QBit a
+entangle (QB states1) (QB states2) = QB [|states1 <~> states2|]
+
+conjugateQBit : Neg a => QBit a -> QBit a
+conjugateQBit = liftQBit (map conjugateQS)
+
+
+
+test : QBit Int
+test = QB [(QS (1:+(-1)) "0"), (QS (0:+1) "1")]
