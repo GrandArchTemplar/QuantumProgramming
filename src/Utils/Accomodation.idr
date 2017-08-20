@@ -1,4 +1,4 @@
-module Utilll.Accomodation
+module Utils.Accomodation
 
 import Data.Vect
 %hide Data.Vect.(::) 

@@ -3,7 +3,7 @@ module Basic.Types.QBit
 import Data.Complex
 import Data.Vect
 
-import Utilll.Accomodation
+import Utils.Accomodation
 
 %default total
 %access public export
@@ -104,14 +104,26 @@ scalarProduct qb1 qb2 = realPart
                                                 (toFineList qb1) 
                                                 (toFineList qb2)))
 
---implementation Cast a a where
---  cast = id
+implementation (Fractional a, Neg a) => Fractional (Complex a) where
+    (/) (a:+b) (c:+d) = let
+                          real = (a*c+b*d)/(c*c+d*d)
+                          imag = (b*c-a*d)/(c*c+d*d)
+                        in
+                          (real:+imag)
+
 
 norm : (Cast a Double, Cast Double a, Neg a, Eq a) => QBit a -> a
 norm qb = (cast . sqrt . cast) (scalarProduct qb (conjugateQBit qb))
 
-normalize : (Cast a Double, Cast Double a, Neg a, Eq a) => QBit a -> QBit Double
-normalize qb = liftQBit (/ ((sqrt . cast)(scalarProduct qb (conjugateQBit qb)))
+normalize : (Cast a Double, Cast Double a, Neg a, Eq a, Fractional a) => 
+            QBit a -> QBit a
+normalize qb = liftQBit ((map . qMap) 
+             ((\(x:+y) => (cast x :+ cast y)) . 
+              (\x => x / (((sqrt . cast) 
+                           (scalarProduct qb (conjugateQBit qb))):+0)) . 
+              (\(x:+y) => (cast x :+ cast y)))) qb
+
+
 p : Cast Double Double => Double
 p = 0.1
 test : QBit Int
