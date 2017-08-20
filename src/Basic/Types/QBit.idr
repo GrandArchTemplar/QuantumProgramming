@@ -43,7 +43,7 @@ qMap f (QS amplitude label) = QS (f amplitude) label
 implementation Eq a => Eq (QuantumState a) where
   (QS amplitude1 label1) == (QS amplitude2 label2) = 
     (amplitude1 == amplitude2) && (label1 == label2)
-implementation [vectorization] Ord a =>  Ord (QuantumState a) where
+implementation [vectorization] Eq a => Ord (QuantumState a) where
   compare (QS amplitude1 label1) (QS amplitude2 label2) = compare label1 label2
 
 qPredicate : (p : Complex a -> Bool) -> QuantumState a -> Bool
@@ -76,18 +76,20 @@ fromList xs ys = QB (zipWith QS xs ys)
 refine : Ord a => QBit a -> List (QuantumState a)
 refine (QB states) = sort @{vectorization} states
 
-toFineList : Ord a => QBit a -> List (Complex a)
+toFineList : Eq a => QBit a -> List (Complex a)
 toFineList (QB states) = map amplitude (sort @{vectorization} states)
 
 fromFineList : List (Complex a) -> QBit a 
 fromFineList xs = QB (zipWith QS xs (accomod "01" (degree (length xs) 2)))
 
-liftQBit : (f : List (QuantumState a) -> List (QuantumState b)) -> QBit a -> QBit b
+liftQBit : (f : List (QuantumState a) -> List (QuantumState b)) 
+              -> QBit a -> QBit b
 liftQBit f (QB states) = QB (f states)
 
 infix 2 <~>
 (<~>) : Neg a => QuantumState a -> QuantumState a -> QuantumState a
-(QS amplitude1 label1) <~> (QS amplitude2 label2) = QS (amplitude1 * amplitude2) (label1 ++ label2)
+(QS amplitude1 label1) <~> (QS amplitude2 label2) = 
+  QS (amplitude1 * amplitude2) (label1 ++ label2)
 
 entangle : Neg a => QBit a -> QBit a -> QBit a
 entangle (QB states1) (QB states2) = QB [|states1 <~> states2|]
@@ -95,7 +97,22 @@ entangle (QB states1) (QB states2) = QB [|states1 <~> states2|]
 conjugateQBit : Neg a => QBit a -> QBit a
 conjugateQBit = liftQBit (map conjugateQS)
 
+scalarProduct : (Neg a, Eq a) => QBit a -> QBit a -> a
+scalarProduct qb1 qb2 = realPart 
+                        (sum 
+                          (Prelude.List.zipWith (*) 
+                                                (toFineList qb1) 
+                                                (toFineList qb2)))
 
+--implementation Cast a a where
+--  cast = id
 
+norm : (Cast a Double, Cast Double a, Neg a, Eq a) => QBit a -> a
+norm qb = (cast . sqrt . cast) (scalarProduct qb (conjugateQBit qb))
+
+normalize : (Cast a Double, Cast Double a, Neg a, Eq a) => QBit a -> QBit Double
+normalize qb = liftQBit (/ ((sqrt . cast)(scalarProduct qb (conjugateQBit qb)))
+p : Cast Double Double => Double
+p = 0.1
 test : QBit Int
-test = QB [(QS (1:+(-1)) "0"), (QS (0:+1) "1")]
+test = QB [(QS (1:+(-2)) "0"), (QS (2:+1) "1")]
