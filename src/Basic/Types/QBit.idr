@@ -2,8 +2,10 @@ module Basic.Types.QBit
 
 import Data.Complex
 import Data.Vect
-
+import Effects
+import Effect.Random
 import Utils.Accomodation
+import Utils.ComplexAddon
 
 %default total
 %access public export
@@ -104,24 +106,34 @@ scalarProduct qb1 qb2 = realPart
                                                 (toFineList qb1) 
                                                 (toFineList qb2)))
 
-implementation (Fractional a, Neg a) => Fractional (Complex a) where
-    (/) (a:+b) (c:+d) = let
-                          real = (a*c+b*d)/(c*c+d*d)
-                          imag = (b*c-a*d)/(c*c+d*d)
-                        in
-                          (real:+imag)
-
-
 norm : (Cast a Double, Cast Double a, Neg a, Eq a) => QBit a -> a
 norm qb = (cast . sqrt . cast) (scalarProduct qb (conjugateQBit qb))
 
 normalize : (Cast a Double, Cast Double a, Neg a, Eq a, Fractional a) => 
             QBit a -> QBit a
 normalize qb = liftQBit ((map . qMap) 
-             ((\(x:+y) => (cast x :+ cast y)) . 
-              (\x => x / (((sqrt . cast) 
-                           (scalarProduct qb (conjugateQBit qb))):+0)) . 
-              (\(x:+y) => (cast x :+ cast y)))) qb
+             (cast . 
+             (\x => x / (((sqrt . cast) 
+                          (scalarProduct qb (conjugateQBit qb))):+0)) . 
+             cast)) qb
+
+extract : (Cast a Double, Cast Double a, Neg a, Eq a) => 
+          QBit a -> Eff String [RND]
+extract qb = helper (map cast (toAmplList qb)) (toLabelList qb) where
+  helper : List (Complex Double) -> List String-> Eff String [RND]
+  helper ampl labels = help (part 0 ampl) labels where
+    part : Double -> List (Complex Double) -> List Double
+    part prev [] = []
+    part prev ((x :+ y) :: xs) = curr :: part curr xs where
+      curr : Double
+      curr = prev + x * x + y * y
+    help : List Double -> List String -> Eff String [RND]
+
+
+
+
+
+
 
 
 p : Cast Double Double => Double
