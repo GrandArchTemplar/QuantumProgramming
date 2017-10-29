@@ -10,7 +10,7 @@ accomod x k = helper (sort (map (pack . (\x => [x])) (unpack x))) k where
   helper : List String -> Nat -> List String
   helper alph Z = []
   helper alph (S Z) = alph
-  helper alph (S (S k)) = pure (++) <*> alph <*> helper alph (S k)
+  helper alph (S (S k)) = [| alph ++ helper alph (S k) |]
 
 degree : Nat -> Nat -> Nat
 degree x k = helper x k 0 1 where
